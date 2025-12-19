@@ -4,18 +4,16 @@ import struct
 import time
 
 # --- 配置参数 ---
-BLUETOOTH_PORT = 'COM6' 
+BLUETOOTH_PORT = 'COM6' #将该串口号改为灯板相应串口
 BAUDRATE = 115200
 JSON_FILE_PATH = 'led_data.json'
 
-# --- 新的协议常量 ---
 SYNC_BYTE = b'\xAA'
 ACK_BYTE = b'\xBB'
 
 def send_animation_data(port, json_path):
     ser = None
     try:
-        # 1. 连接到蓝牙串口
         ser = serial.Serial(port, baudrate=BAUDRATE, timeout=5)
         print(f"成功连接到蓝牙串口: {port}")
         time.sleep(2)
@@ -23,7 +21,6 @@ def send_animation_data(port, json_path):
         ser.reset_input_buffer()
         ser.reset_output_buffer()
 
-        # 2. 读取并解析JSON文件
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
@@ -31,7 +28,6 @@ def send_animation_data(port, json_path):
         frames = data['frames']
         print(f"解析到 {frame_count} 帧动画数据。")
 
-        # 3. 准备二进制数据包（按帧分割）
         frame_data_list = []
         for frame in frames:
             if 'rgb' not in frame or not isinstance(frame['rgb'], list):
@@ -39,10 +35,8 @@ def send_animation_data(port, json_path):
                 continue
             
             frame_binary_data = b''
-            # 写入帧时长（4字节浮点数）
             frame_binary_data += struct.pack('<f', frame['duration'])
             
-            # 写入64个像素的RGB数据
             for pixel_list in frame['rgb']:
                 if isinstance(pixel_list, list) and len(pixel_list) == 3:
                     r, g, b = pixel_list
@@ -52,25 +46,20 @@ def send_animation_data(port, json_path):
                     frame_binary_data += struct.pack('BBB', 0, 0, 0)
             frame_data_list.append(frame_binary_data)
         
-        # 4. 协商并开始传输
         print("发送同步字节...")
         ser.write(SYNC_BYTE)
-        # 等待ESP32的确认
         if ser.read(1) != ACK_BYTE:
             print("错误: 未收到ESP32的同步确认。")
             return
 
         print("发送总帧数...")
         ser.write(struct.pack('<I', frame_count))
-        # 等待ESP32的确认
         if ser.read(1) != ACK_BYTE:
             print("错误: 未收到ESP32的总帧数确认。")
             return
 
-        # 5. 逐帧发送数据，等待确认
         for i, frame_data in enumerate(frame_data_list):
             ser.write(frame_data)
-            # 等待ESP32的确认
             if ser.read(1) == ACK_BYTE:
                 print(f"已发送第 {i+1}/{frame_count} 帧，收到确认。")
             else:

@@ -76,5 +76,5 @@ def process_video(input_path, output_video, output_data):
     print(f"转换完成！输出视频: {output_video}, 输出LED数据: {output_data}")
 
 if __name__ == "__main__":
-    filename = input("请输入待转换视频名称（如 exmaple.mp4）：")
+    filename = input("请输入待转换视频名称（如 example.mp4）：")
     process_video(filename, "compressed.mp4", "led_data.json")
