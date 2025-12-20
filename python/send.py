@@ -3,15 +3,11 @@ import serial
 import struct
 import time
 
-# --- 配置参数 ---
-BLUETOOTH_PORT = 'COM6' #将该串口号改为灯板相应串口
-BAUDRATE = 115200
 JSON_FILE_PATH = 'led_data.json'
-
 SYNC_BYTE = b'\xAA'
 ACK_BYTE = b'\xBB'
 
-def send_animation_data(port, json_path):
+def send_animation_data(port, json_path, BAUDRATE):
     ser = None
     try:
         ser = serial.Serial(port, baudrate=BAUDRATE, timeout=5)
@@ -80,4 +76,6 @@ def send_animation_data(port, json_path):
             print("串口已关闭。")
 
 if __name__ == "__main__":
-    send_animation_data(BLUETOOTH_PORT, JSON_FILE_PATH)
+    BLUETOOTH_PORT = input("请输入设备所在串口号：")
+    BAUDRATE = int(input("请输入波特率（如 115200）："))
+    send_animation_data(BLUETOOTH_PORT, JSON_FILE_PATH, BAUDRATE)
